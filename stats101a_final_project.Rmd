@@ -1,0 +1,374 @@
+---
+title: "Stats101A Final Project"
+subtitle : "Meiyi Ye"
+author: "505569664"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+\tableofcontents 
+
+# Introduction
+ 
+For ages, buying a home has been considered a great monumental goal for countless individuals. In our current society, a house can also be a means to financial wealth/stability. Purchasing your own house can be a sort of investment as it usually appreciates with time. Past trends indicates a stable positive growth in housing prices that can correlate to building generational wealth, an aspect of financial well being that is often overlooked. Knowing the importance of owning your own home can provide little comfort in terms of first home buyers and sellers. There are many aspects to consider when buying and selling a home. Such as the price, the location, the amount of rooms available etc. One question that can arise from this is whether a home's features can affect its price. In this project, I will be diving into the the relationship between housing price and its features.
+
+The data I use for this project is a housing data set from kaggle.com. https://www.kaggle.com/datasets/ananthreddy/housing The housing data set has 12 variables, price, lotsize, bedrooms, bathrms, stories, driveway, recroom, fullbase, gashw, airco, garagepl, prefarea. There are a total of 546 observations. 
+
+- price: Price of a house.
+- lotsize: The square feet lot size 0f a property.
+- bedrooms: The number of bedrooms.
+- bathrms : The number of bathrooms.
+- stories: The number of stories not including basement.
+- driveway: Is there a driveway?
+- recroom: Is there a recreational room?
+- fullbase: Is there a basement?
+- gashw: Does the house use gas for water heating?
+- airco: is there air conditioning?
+- garagepl: The number of garage places.
+- prefarea: Is the house located in a preferred area?
+
+```{r echo=FALSE}
+housing <- read.csv("housing.csv", header = TRUE)
+housing <- housing[,-1] #The 1st column is index, does not need to be included
+#Turning yes/no categorical columns into binary
+housing$driveway <- as.integer(ordered(housing$driveway)) - 1
+housing$recroom <- as.integer(ordered(housing$recroom)) - 1
+housing$fullbase <- as.integer(ordered(housing$fullbase)) - 1
+housing$gashw <- as.integer(ordered(housing$gashw)) - 1
+housing$airco <- as.integer(ordered(housing$airco)) - 1
+housing$prefarea <- as.integer(ordered(housing$prefarea)) - 1
+head(housing, 4) #A snippet of the data
+```
+
+I chose to use a multiple linear model for this project. Why did I choose a multiple linear model? Because it is a powerful statistical technique for exploring the relationship between one response variable and multiple explanatory variables that are supposedly related to the response variable. In this case, it was exactly what I aimed to explore in my research, the relationship between the price of housing and the different attributes of housing, such as lot size, number of bathrooms, etc. The multiple linear model allows us to see how strong or weak a explanatory variable associates to the response variable. This method is also impressive in the way that it helps us make predictions about the dependent variable based on the values of the independent variables, for example predicting price. 
+
+This is the end of the introduction. Following this is the data description where the housing summary statistics, such as mean, standard deviation, correlation, and etc are reported. The distribution of each variable and relationships among the variables will also be presented using graphs. The third section is where the results of the multiple linear housing model will be interpreted. I will also discuss the model candidates that I compared during the search for the best fitting model. Furthermore, I will determine the best predictive model and assess the model using diagnostic tools. Lastly, I will summarize my project, discuss if my final model makes sense in the real world. 
+
+# Data Description
+
+The minimum, 1st quartile, median, mean, 3rd quartile, maximum of each variable in the housing data.
+
+```{r}
+summary(housing) 
+```
+
+The standard deviation of each variable in the housing data.
+
+```{r}
+apply(housing, 2, sd)
+```
+
+This is the correlation of the response variable (price) and each explanatory variable in the housing data.
+
+```{r echo=FALSE}
+cat("Correlation between price and lotsize: ", cor(housing$price, housing$lotsize), "\n")
+cat("Correlation between price and bedrooms: ", cor(housing$price, housing$bedrooms), "\n")
+cat("Correlation between price and bathrms: ", cor(housing$price, housing$bathrms), "\n")
+cat("Correlation between price and stories: ", cor(housing$price, housing$stories), "\n")
+cat("Correlation between price and driveway: ", cor(housing$price, housing$driveway), "\n")
+cat("Correlation between price and recroom: ", cor(housing$price, housing$recroom), "\n")
+cat("Correlation between price and fullbase: ", cor(housing$price, housing$fullbase), "\n")
+cat("Correlation between price and gashw: ", cor(housing$price, housing$gashw), "\n")
+cat("Correlation between price and airco: ", cor(housing$price, housing$airco), "\n")
+cat("Correlation between price and garagepl: ", cor(housing$price, housing$garagepl), "\n")
+cat("Correlation between price and prefarea: ", cor(housing$price, housing$prefarea), "\n")
+#cor(housing$price, housing[2:12])
+```
+
+The distribution of each variable are presented by histograms (See Figure. 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12) and the relationship among variables are presented by scatter plots.
+
+```{r}
+plot(housing)
+```
+
+# Results and Interpretation
+
+Here, I developed a regression model with the response variable price and all of the 11 potential predictor variables.
+
+```{r}
+model1 <- lm(price~lotsize+bedrooms+bathrms+stories+driveway+
+               recroom+fullbase+gashw+airco+garagepl+prefarea, data = housing)
+```
+
+Next, I produced four diagnostic plots. In the Residual vs. Fitted plot, the constant variance of the error term (the red line) does not appear completely linear, but we want the red line as linear as possible. In the Normal Q-Q plot, the points are mostly aligned to the straight line, which implies the normality of the errors, but the plot could be improved. The plot of Residual vs. Leverage is to check the outliers or (possible) influential points, I will tackle outliers later.
+
+```{r}
+par(mfrow=c(2,2))
+plot(model1)
+```
+
+From above we observed our model diagnostic plots have some problems. To improve the non-constant variance and non-normality issues, I chose to use a power transformation method called the inverse response plot which transforms the response variable only.
+
+```{r}
+library(car)
+#inverse response plot
+inverseResponsePlot(model1, key=TRUE)
+```
+
+After running the inverse response plot, $\lambda$ equaled to 0.5, thus we transform the response variable by taking the square root. I developed a new regression model with the square root response variable price and all of the 11 potential predictor variables.
+
+```{r}
+model2 <- lm(sqrt(price) ~ lotsize + bedrooms + bathrms + stories + 
+    driveway + recroom + fullbase + gashw + airco + garagepl + 
+    prefarea, data = housing)
+```
+
+We should check the model diagnostic plots of models every time we do a transformation or removing outliers or leverage points to see if the plots improve. So, we generated the model diagnostic plots of the new power transformation model. The results are good. In the Residual vs. Fitted plot, the constant variance of the error term appeared to be linear, which implied constant variance, which is what we want. More points on Normal Q-Q plot aligned on the line than the previous model, this implies normality of errors. We can conclude that the power transform model is a better fitting model than our original model.
+
+```{r}
+par(mfrow=c(2,2))
+plot(model2)
+```
+
+I once again try to improve my model by removing the points greater than the leverage point. However, when I checked its model diagnostic plots, the plots (See Figure. 13) looked worst than the previous model. The Residual vs. Fitted plot looked less linear and the points in the Normal Q-Q plot was less aligned with the line. Since this model was no good, I decided to just stick to my power transformation model. 
+
+```{r}
+model3 <- lm(price ~ lotsize + bedrooms + bathrms + stories +
+    driveway + recroom + fullbase + gashw + airco + garagepl + #leverage point
+    prefarea, data = housing[hatvalues(model2) < 0.04395604,]) #2 * ((p + 1) / n) = 0.04395604
+```
+
+Now, I want to test whether the power transformation model terms are significant, thus running the ANOVA test is perfect for our task. From its output we see that all the variables are significant because they all have p-value < 0.05. So, we can try to test the variable significance another way, use the added-variable plots check what variables are significant.
+
+```{r}
+anova(model2)
+```
+
+To check which variables contribute the most to the model we could look at the magnitude of the slope. If the slope of the variable is steep (not flat), it means it contributes and it is significant. If the slope is flat or almost flat it means it does not contributes and it is not significant. From the output of the added-variable plot of the power transformation model, I observed that variables fullbase, bedrooms, driveway, recroom, prefarea appeared to have a low magnitude. 
+
+```{r}
+avPlots(model2)
+```
+
+To test the theory that variables fullbase, bedrooms, driveway, recroom, prefarea are not significant variables, we created a reduced model which is the transformed model but with the fullbase variable excluded (See Figure. 14). Then, we use the ANOVA partial F-test to compare the the reduced model against the full model (transformed model), which resulted in the p-value < 0.05, thus we choose the full model as the better fitting model. This method is then repeated by removing variables bedrooms, driveway, recroom, prefarea from the reduced model one at a time, and compared against the full model (See Figure. 15, 16, 17, 18). They all resulted in a p-value < 0.05, which we concluded the full model was the best fitting model. 
+
+Even after we make a model valid, we can sometimes expect some improvements by selecting variables. Variable selection methods aim to choose the subset of the predictors that is the best set. In our case, we chose to do backward elimination AIC and BIC, and forward selection AIC and BIC.  Backward elimination deletes a variable with the biggest p-value each round. Forward selection adds a variable with the smallest p-value each round. When we ran our backward AIC,  it showed that the full transformation model was the best model. When we ran our backward BIC, it showed that the full transformation model excluding bedrooms variable was the best model. Backward AIC and forward AIC arrives at the same model, this also applies to Backward BIC and forward BIC (See Figure. 19, 20, 21, 22). To find out which model is better, we ran a summary on backward AIC and BIC then compared their adjusted R^2, 0.6802 vs. 0.6782 (See Figure. 23). The better model have the higher adjusted R^2 value. In this case, the backward AIC had the high adjusted R^2 value, thus we come to the conclusion that the full model is the best fitting model for our housing data.
+
+```{r}
+vif(model2)
+```
+I also checked that all variance inflation factors are less than 5, there doesn’t appear to be an issue with multicollinearity. 
+
+**The final model** (See Figure. 24): Predicted price = 1.219e+02 + 6.602e-03(lotsize) + 3.919e+00(bedrooms) + 2.420e+01(bathrms) + 1.216e+01(stories) + 1.474e+01(driveway) + 9.162e+00(recroom) + 1.150e+01(fullbase) + 2.367e+01(gashw) + 2.341e+01(airco) + 7.188e+00(garagepl) + 1.700e+01(prefarea)
+
+# Discussion
+
+Based on the Residual vs Fitted plot, the constant variance of the error term did not appear linear, so I performed a power transformation on the full model. Afterward, I ran the Residual vs. Fitted plot again, and this time the constant variance of the error term improved and appeared much more linear. I also attempted to remove points that are greater than the leverage point in the data, however, the Residual vs Fitted plot constant variance of the error term looked less linear than the power transformation model, thus I stuck with the power transformation model. Following that, I performed the ANOVA test and the added-variables plots on the model so I can see which variables were significant and which were not. Next, I used ANOVA partial F-test to compare the different reduced models and the full model, which resulted in the full model being the best fitting model. I also did variable selection, which once again confirmed that the full model was the best fitting model. Power transformation with the full model was the best fitting model for the housing data, the model is also confirmed by ANOVA and variable selection. Lastly, I checked the variance inflation factors, and there is no issue with multicollinearity.
+
+My final model makes sense in real world situations. The price of a house is very much dependent on the different features of the house, the lot size, number of bedrooms, number of bathrooms, and etc. So, it makes prefect sense that all the variables would be included in my model, because every aspect of a house affect the house's price. It is very much prevalent in today's society, a home that has a big lot size, or a home in a preferred and nice area, or a home that has a multi-garage, will be priced at a higher value than a home that has a small lot size, or a home in a less-preferred area, or a home that has no garage. 
+
+A potential limitation of this analysis is that the model might only be valid for housing prices in the location where the data set was collected.
+
+\newpage
+
+# Appendix
+
+### Figure 1
+
+```{r}
+hist(housing$price,
+     density = 30, col = "blue", angle = 45)
+```
+
+\newpage
+
+### Figure 2
+
+```{r}
+hist(housing$lotsize,
+     density = 30, col = "blue", angle = 45)
+```
+
+\newpage
+
+### Figure 3
+
+```{r}
+hist(housing$bedrooms,
+     density = 30, col = "blue", angle = 45)
+```
+
+\newpage
+
+### Figure 4
+
+```{r}
+hist(housing$bathrms,
+     density = 30, col = "blue", angle = 45)
+```
+
+\newpage
+
+### Figure 5
+
+```{r}
+hist(housing$stories,
+     density = 30, col = "blue", angle = 45)
+```
+
+\newpage
+
+### Figure 6
+
+```{r}
+hist(housing$driveway,
+     density = 30, col = "blue", angle = 45)
+```
+
+\newpage
+
+### Figure 7
+
+```{r}
+hist(housing$recroom,
+     density = 30, col = "blue", angle = 45)
+```
+
+\newpage
+
+### Figure 8
+
+```{r}
+hist(housing$fullbase,
+     density = 30, col = "blue", angle = 45)
+```
+
+\newpage
+
+### Figure 9
+
+```{r}
+hist(housing$gashw,
+     density = 30, col = "blue", angle = 45)
+```
+
+\newpage
+
+### Figure 10
+
+```{r}
+hist(housing$airco,
+     density = 30, col = "blue", angle = 45)
+```
+
+\newpage
+
+### Figure 11
+
+```{r}
+hist(housing$garagepl,
+     density = 30, col = "blue", angle = 45)
+```
+
+\newpage
+
+### Figure 12
+
+```{r}
+hist(housing$prefarea,
+     density = 30, col = "blue", angle = 45)
+```
+
+### Figure 13
+
+```{r}
+par(mfrow=c(2,2))
+plot(model3)
+```
+
+### Figure 14
+
+```{r}
+reduced_model1 <- lm(sqrt(price) ~ lotsize + bedrooms + bathrms + stories + 
+    driveway + recroom + gashw + airco + garagepl + 
+    prefarea, data = housing)
+#remove fullbase
+anova(reduced_model1, model2)
+#P-value < 0.05 => choose full model
+```
+
+### Figure 15
+
+```{r}
+reduced_model2 <- lm(sqrt(price) ~ lotsize + bathrms + stories + 
+    driveway + recroom + gashw + airco + garagepl + 
+    prefarea, data = housing)
+#remove bedrooms
+anova(reduced_model2, model2)
+#P-value < 0.05 => choose full model
+```
+
+### Figure 16
+
+```{r}
+reduced_model3 <- lm(sqrt(price) ~ lotsize + bathrms + stories + 
+                       recroom + gashw + airco + garagepl +  prefarea, data = housing)
+#remove driveway
+anova(reduced_model3, model2)
+#P-value < 0.05 => choose full model
+```
+
+### Figure 17
+
+```{r}
+reduced_model4 <- lm(sqrt(price) ~ lotsize + bathrms +  stories + 
+                       gashw + airco + garagepl + prefarea, data = housing)
+#remove recroom
+anova(reduced_model4, model2)
+#P-value < 0.05 => choose full model
+```
+
+### Figure 18
+
+```{r}
+reduced_model5 <- lm(sqrt(price) ~ lotsize + bathrms + stories + 
+                       gashw + airco + garagepl, data = housing)
+#remove prefarea
+anova(reduced_model5, model2)
+#P-value < 0.05 => choose full model
+```
+
+### Figure 19
+
+```{r}
+mint <- lm(sqrt(price)~1,data=housing)
+
+forwardAIC <- step(mint,scope=list(lower=~1, upper=~lotsize+bedrooms+bathrms
+                              +stories+driveway+recroom+fullbase+gashw+airco+
+                                garagepl+prefarea),direction="forward", data=housing)
+```
+
+### Figure 20
+
+```{r}
+n <- 546 #Number of observations
+forwardBIC <- step(mint,scope=list(lower=~1,upper=~lotsize+bedrooms+
+                   bathrms+stories+driveway+recroom+fullbase+gashw+airco+
+                    garagepl+prefarea), direction="forward", data=housing,k=log(n))
+```
+
+### Figure 21
+
+```{r}
+backAIC <- step(model2, direction = "backward", data = housing)
+```
+
+### Figure 22
+
+```{r}
+backBIC <- step(model2,direction="backward", data=bridge, k=log(n))
+```
+
+### Figure 23
+
+```{r}
+summary(backAIC) #full model has a higher adjusted R^2
+summary(backBIC)
+```
+
+### Figure 24
+
+```{r}
+summary(model2)
+```
