@@ -1,2 +1,2 @@
-# UCLA-Stats101A-Final-Project
-In this project, I aimed to research the relationship between housing prices and housing features. To explore their relationship, I chose a multiply linear model, and used various methods to find the regression model which best described the relationship between explanatory and response variables. Through the project, I justified why the regression model is appropriate for describing the relationship among the variables.
+# Housing Price Prediction
+For the Stats 101A final project, I aimed to research the relationship between housing prices and housing features. To explore their relationship, I chose a multiply linear model, and used various methods to find the regression model which best described the relationship between explanatory and response variables. Through the project, I justified why the regression model is appropriate for describing the relationship among the variables.
